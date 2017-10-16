@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css"  href="{{ url_for('static', filename='styles/mainpage.css') }}"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+</head>
+<body>
+<script>
+
+    var api = "{{api}}"
+
+    var $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+    $(function() {
+    var updateHospitalWaittimes = function(e) {
+      $.getJSON($SCRIPT_ROOT + '/updateHospitalWaitTimes', {}, function(data) {
+        var obj = data.result
+        for (var key in obj){
+            $("#" + key).text(obj[key]);
+        }
+      });
+      return false;
+    };
+
+    var updateMedicentreWaittimes = function(e) {
+      $.getJSON($SCRIPT_ROOT + '/updateMedicentreWaitTimes', {}, function(data) {
+        var obj = data.result
+        for (var key in obj){
+            $("#" + key).html(obj[key]);
+        }
+      });
+      return false;
+    };
+
+    var interval = 1000 * 60 * 2;
+
+    var updates = function(e){
+        updateHospitalWaittimes();
+        updateMedicentreWaittimes();
+    }
+
+    setInterval(updates, interval);
+    });
+
+    var x = document.getElementById("demo");
+    var inited = false;
+    function setLocation() {
+        //check if the user has added an address
+        if ($('input[name="address"]').val().length > 0){
+            newSRC($('input[name="address"]').val());
+        } else {
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(showPosition,showError);
+            } else {
+                x.innerHTML = "Geolocation is not supported by this browser.";
+                $('input[name="address"]').attr('value', "Edmonton,AB");
+            }
+        }
+    }
+
+    function showError(error) {
+        switch(error.code) {
+        case error.PERMISSION_DENIED:
+          //x.innerHTML = "User denied the request for Geolocation.";
+          alert("Enter you address");
+          break;
+        case error.POSITION_UNAVAILABLE:
+          x.innerHTML = "Location information is unavailable."
+          break;
+        case error.TIMEOUT:
+          x.innerHTML = "The request to get user location timed out."
+          break;
+        case error.UNKNOWN_ERROR:
+          x.innerHTML = "An unknown error occurred."
+          break;
+        }
+    }
+
+    function showPosition(position) {
+        //x.innerHTML = "Latitude: " + position.coords.latitude +
+        //"<br>Longitude: " + position.coords.longitude;
+        $('input[name="address"]').attr('value', position.coords.latitude + "," + position.coords.longitude);
+        $('input[name="address"]').attr('readonly', true);
+        newSRC(position.coords.latitude + "," + position.coords.longitude)
+
+    }
+
+    function getLocation(){
+        return $('input[name="address"]').val()
+    }
+
+    function newSRC(origin){
+
+        //Check if the user has added an address
+
+        url = "https://www.google.com/maps/embed/v1/directions" +
+                    "?key=" + api +
+                    "&origin=" + origin +
+                    "&destination=" + $('input[name="optradio"]:checked').val() +
+                    "&avoid=tolls|highways";
+        console.log($('input[name="optradio"]:checked').val());
+        console.log(url);
+        document.getElementById('iFrame').setAttribute('src', url);
+
+    }
+
+    function saab(){
+        var selectedValue = document.getElementsByName('clinic_options')[0].value
+        if (selectedValue === 'hospitals'){
+            console.log(selectedValue);
+            $.getJSON($SCRIPT_ROOT + '/updateTimes', {}, function(data) {
+                $("#radioButtons").html(data.table);
+            });
+        }
+        if (selectedValue === 'medicentres'){
+            console.log(selectedValue);
+            $.getJSON($SCRIPT_ROOT + '/medicentreWaitTimes', {}, function(data) {
+                $("#radioButtons").html(data.table);
+            });
+        }
+        if (selectedValue === 'other'){
+            console.log(selectedValue);
+            $.getJSON($SCRIPT_ROOT + '/otherClinics', {}, function(data) {
+                $("#radioButtons").html(data.table);
+            });
+        }
+    }
+</script>
+<select name="clinic_options" onchange="saab()">
+  <option value="hospitals">Hospital Emergency</option>
+  <option value="medicentres">Medicentre</option>
+  <option value="other">Other Walk-in Clinics</option>
+</select>
+
+<table width="100%">
+    <tbody>
+        <tr>
+
+        </tr>
+    </tbody>
+</table>
+
+
+    <table width="100%" height="600px">
+        <tbody>
+        <tr>
+    <td width="50%">
+        <div id="radioButtons" style="border: 1px; height: 100%; overflow: auto;">{{table|safe}}</div>
+    </td>
+    <td width="50%" style="text-align: center;">
+      <iframe id="iFrame" src="https://www.google.com/maps/embed/v1/place?key={{api}}
+                &amp;q=Edmonton,AB" width="400px" height="400px" align="centre">
+    </iframe>
+    </td>
+    </tr>
+</tbody>
+</table>
+<form>
+    Your location: <input type="text" name="address" placeholder="Enter an address!">
+</form>
+<button onclick="setLocation()">Get Directions</button>
+</body>
+</html>
