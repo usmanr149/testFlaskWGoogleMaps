@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 
 from getHTMLTable import getHospitalWaitTimes, getHTML, fixValue, getMedicentreHTML, getMedicentreData, find_word, getOtherClinicsHTML
+from getRecommendation import getTravellingTime
 import re
 
 import configparser
@@ -85,12 +86,24 @@ def medicentreWaitTimes():
 def otherClinics():
     return jsonify(table=getOtherClinicsHTML())
 
+
+@app.route('/recommend')
+def recommend():
+    origin = request.args.get('origin', 0, type=str)
+    print(origin)
+    bestTime, where, type = getTravellingTime("9803 - 105 St NW, Edmonton, Alberta")
+    return jsonify(where=where, type=type)
+
 @app.route("/test")
 def test():
     hospital_wait_times, time = getHospitalWaitTimes()
     table = getHTML(hospital_wait_times, time)
     return render_template("test.html", table=table, api=api)
 
+@app.route('/_add_numbers')
+def add_numbers():
+    a = request.args.get('a', 0, type=int)
+    return jsonify(result=a)
 
 if __name__ == '__main__':
-   app.run(debug=True)
+   app.run(debug=True, port=7000, threaded=True)

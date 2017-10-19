@@ -3,6 +3,8 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import requests, json, re, time
 
+import geocoder
+
 def getHospitalWaitTimes():
     url = "http://www12.albertahealthservices.ca/repacPublic/SnapShotController?direct=displayEdmonton"
     page = urlopen(url).read()
@@ -50,6 +52,7 @@ def getHTML(data, updateTime):
             html.append("<label> <input type = 'radio' id = 'location_hospital_{0}' name = 'optradio' value = {1},Edmonton>".format(
                 k[0].split(" ")[0], k[0].replace(" ", "+")))
             html.append("{0}</label>".format(k[0]))
+
         html.append("</div>")
         html.append("</td><td><div class ='radiotext' style='text-align: center;'>")
         html.append("<label for='regular' id = '{1}_time'>{0}</label>".format(str(value[:2])+":"+str(value[2:]), k[0].split(" ")[0]))
@@ -140,6 +143,7 @@ def getMedicentreHTML(url= "https://www.medicentres.com/clinic-locations/"):
             </tr>
             """.format(name.split(" ")[0], add.replace(" ", "+"), name, hr_min(waitTimes, 'hr'),
                        hr_min(waitTimes, 'mins'), lastUpdated))
+            print(name)
 
     html.append("""</tbody></table>""")
 
@@ -151,4 +155,4 @@ def getOtherClinicsHTML(url='http://www.walkinhealth.ca/directory/walk-in-clinic
     return data[time.strftime("%A")]
 
 if __name__ == '__main__':
-    print(getOtherClinicsHTML())
+    print(getMedicentreData())
